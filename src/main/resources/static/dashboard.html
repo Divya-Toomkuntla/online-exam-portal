@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard - Online Exam Portal</title>
+  <style>
+    :root { --accent:#2563eb; --line:#e5e7eb; --muted:#6b7280; }
+    body { font-family: system-ui, sans-serif; background:#f5f6fa; color:#1f2430; margin:0; }
+    header { background:var(--accent); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+    header h1 { margin:0; font-size:1.3rem; }
+    header a { color:#fff; margin-right:12px; }
+    main { max-width:760px; margin:24px auto; padding:0 16px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:16px; }
+    .card h2, .card h3 { margin-top:0; }
+    button, a.btn { border:0; border-radius:6px; padding:9px 14px; font:inherit; cursor:pointer; background:var(--accent); color:#fff; text-decoration:none; display:inline-block; }
+    header button { background:#1e40af; }
+    .badge { padding:2px 10px; border-radius:99px; font-size:.8rem; font-weight:600; background:#dbeafe; color:#1e40af; }
+    .badge.admin { background:#fef3c7; color:#92400e; }
+    .exam { display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:10px; }
+    .muted { color:var(--muted); font-size:.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Online Exam Portal</h1>
+    <div>
+      <a href="/results.html">My results</a>
+      <a href="/admin.html" id="adminNav" hidden>Manage exams</a>
+      <button type="button" id="logout">Logout</button>
+    </div>
+  </header>
+  <main>
+    <div class="card">
+      <h2 id="welcome">Loading...</h2>
+      <p>Role: <span class="badge" id="role"></span></p>
+    </div>
+
+    <div class="card">
+      <h3>Available exams</h3>
+      <div id="examList"><p class="muted">Loading exams...</p></div>
+    </div>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function getToken() {
+      try { return localStorage.getItem('token'); } catch (e) { return null; }
+    }
+
+    function logout() {
+      try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch (e) {}
+      window.location.href = '/login.html';
+    }
+
+    async function api(path) {
+      return fetch(path, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+    }
+
+    async function loadExams() {
+      const res = await api('/api/exams');
+      if (!res.ok) { $('examList').innerHTML = '<p class="muted">Could not load exams.</p>'; return; }
+      const exams = await res.json();
+      $('examList').innerHTML = exams.length
+        ? exams.map(e => `
+          <div class="exam">
+            <div>
+              <b>${esc(e.title)}</b><br>
+              ${e.description ? `<span class="muted">${esc(e.description)}</span><br>` : ''}
+              <span class="muted">${e.questionCount} questions &middot; ${e.durationMinutes} minutes</span>
+            </div>
+            <div>
+              ${e.attempted
+                ? `<span class="badge">Attempted</span> <a class="btn" href="/results.html" style="background:#475569">View result</a>`
+                : `<a class="btn" href="/take.html?id=${e.id}">${e.inProgress ? 'Resume' : 'Start'}</a>`}
+            </div>
+          </div>`).join('')
+        : '<p class="muted">No exams are available yet.</p>';
+    }
+
+    async function init() {
+      if (!getToken()) { window.location.href = '/login.html'; return; }
+
+      const res = await api('/api/me');
+      if (res.status === 401) { logout(); return; }  // token missing, wrong or expired
+
+      const me = await res.json();
+      const isAdmin = me.role === 'ROLE_ADMIN';
+      $('welcome').textContent = 'Welcome, ' + me.name;
+      $('role').textContent = isAdmin ? 'Admin' : 'Student';
+      $('role').classList.toggle('admin', isAdmin);
+      $('adminNav').hidden = !isAdmin;
+
+      loadExams();
+    }
+
+    $('logout').addEventListener('click', logout);
+    init();
+  </script>
+</body>
+</html>

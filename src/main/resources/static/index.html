@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Online Exam Portal</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#f5f6fa; color:#1f2430; margin:0; }
+    header { background:#2563eb; color:#fff; padding:18px 16px; }
+    header h1 { margin:0; font-size:1.3rem; }
+    main { max-width:700px; margin:24px auto; padding:0 16px; }
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:18px; margin-bottom:16px; }
+    code { background:#eef2ff; padding:2px 6px; border-radius:4px; }
+    a.btn { display:inline-block; background:#2563eb; color:#fff; padding:10px 16px; border-radius:6px; text-decoration:none; }
+    #health { white-space:pre; font-family:monospace; }
+  </style>
+</head>
+<body>
+  <header><h1>Online Exam Portal</h1></header>
+  <main>
+    <div class="card">
+      <h2>The portal is running</h2>
+      <p>Admins create timed exams. Students take them and see their scores.</p>
+      <a class="btn" href="/login.html">Go to Login / Register</a>
+    </div>
+    <div class="card">
+      <h3>Health check</h3>
+      <div id="health">Loading...</div>
+    </div>
+    <div class="card">
+      <h3>See the database tables</h3>
+      <p>Open <a href="/h2-console" target="_blank">/h2-console</a> and use:</p>
+      <p>JDBC URL: <code>jdbc:h2:mem:examdb</code><br>
+         User: <code>sa</code> &nbsp; Password: <i>(leave empty)</i></p>
+    </div>
+  </main>
+  <script>
+    fetch('/api/health')
+      .then(r => r.json())
+      .then(d => { document.getElementById('health').textContent = JSON.stringify(d, null, 2); })
+      .catch(() => { document.getElementById('health').textContent = 'Could not reach the API.'; });
+  </script>
+</body>
+</html>

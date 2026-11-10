@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - Online Exam Portal</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#f5f6fa; color:#1f2430; margin:0; }
+    header { background:#2563eb; color:#fff; padding:18px 16px; }
+    header h1 { margin:0; font-size:1.3rem; }
+    main { max-width:420px; margin:24px auto; padding:0 16px; }
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:20px; }
+    .tabs { display:flex; gap:8px; margin-bottom:16px; }
+    .tabs button { flex:1; background:#e5e7eb; color:#1f2430; }
+    .tabs button.active { background:#2563eb; color:#fff; }
+    label { display:block; font-size:.85rem; color:#6b7280; margin:10px 0 3px; }
+    input { width:100%; box-sizing:border-box; padding:9px; border:1px solid #e5e7eb; border-radius:6px; font:inherit; }
+    button { border:0; border-radius:6px; padding:10px 14px; font:inherit; cursor:pointer; background:#2563eb; color:#fff; }
+    .submit { width:100%; margin-top:16px; }
+    #message { margin-top:12px; font-size:.9rem; min-height:1.2em; }
+    .error { color:#b91c1c; }
+    .hint { color:#6b7280; font-size:.8rem; margin-top:14px; }
+  </style>
+</head>
+<body>
+  <header><h1>Online Exam Portal</h1></header>
+  <main>
+    <div class="card">
+      <div class="tabs">
+        <button type="button" id="tabLogin" class="active">Login</button>
+        <button type="button" id="tabRegister">Register</button>
+      </div>
+
+      <form id="form">
+        <div id="nameRow" hidden>
+          <label for="name">Name</label>
+          <input id="name" maxlength="100" autocomplete="name">
+        </div>
+        <label for="email">Email</label>
+        <input id="email" type="email" required autocomplete="email">
+        <label for="password">Password</label>
+        <input id="password" type="password" required minlength="6" autocomplete="current-password">
+        <button class="submit" type="submit" id="submitBtn">Login</button>
+      </form>
+
+      <div id="message"></div>
+      <p class="hint">Testing as admin? Email: admin@exam.com, Password: Admin@123</p>
+    </div>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let mode = 'login';
+
+    function setMode(newMode) {
+      mode = newMode;
+      $('tabLogin').classList.toggle('active', mode === 'login');
+      $('tabRegister').classList.toggle('active', mode === 'register');
+      $('nameRow').hidden = mode !== 'register';
+      $('name').required = mode === 'register';
+      $('submitBtn').textContent = mode === 'login' ? 'Login' : 'Create account';
+      $('message').textContent = '';
+    }
+
+    $('tabLogin').addEventListener('click', () => setMode('login'));
+    $('tabRegister').addEventListener('click', () => setMode('register'));
+
+    $('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const message = $('message');
+      message.className = '';
+      message.textContent = 'Please wait...';
+
+      const body = { email: $('email').value.trim(), password: $('password').value };
+      if (mode === 'register') body.name = $('name').value.trim();
+
+      try {
+        const res = await fetch('/api/auth/' + mode, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          message.className = 'error';
+          // Validation errors come as {field: message}; other errors have a "message" field
+          message.textContent = data.message || Object.values(data).join(', ') || 'Something went wrong';
+          return;
+        }
+
+        try {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify({ name: data.name, email: data.email, role: data.role }));
+        } catch (err) {
+          message.className = 'error';
+          message.textContent = 'Your browser blocked saving the login. Please allow site storage.';
+          return;
+        }
+        window.location.href = '/dashboard.html';
+      } catch (err) {
+        message.className = 'error';
+        message.textContent = 'Could not reach the server.';
+      }
+    });
+  </script>
+</body>
+</html>

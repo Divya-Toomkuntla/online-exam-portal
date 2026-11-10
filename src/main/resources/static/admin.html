@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manage Exams - Online Exam Portal</title>
+  <style>
+    :root { --accent:#2563eb; --line:#e5e7eb; --muted:#6b7280; }
+    body { font-family: system-ui, sans-serif; background:#f5f6fa; color:#1f2430; margin:0; }
+    header { background:var(--accent); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+    header h1 { margin:0; font-size:1.3rem; }
+    header a { color:#fff; margin-right:12px; }
+    main { max-width:860px; margin:24px auto; padding:0 16px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:16px; }
+    .card h2, .card h3 { margin-top:0; }
+    form { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; }
+    .full { grid-column:1/-1; }
+    label { display:block; font-size:.8rem; color:var(--muted); margin-bottom:3px; }
+    input, select, textarea { width:100%; box-sizing:border-box; padding:8px; border:1px solid var(--line); border-radius:6px; font:inherit; }
+    button { border:0; border-radius:6px; padding:9px 14px; font:inherit; cursor:pointer; background:var(--accent); color:#fff; }
+    header button { background:#1e40af; }
+    button.danger { background:#dc2626; }
+    button.secondary { background:#64748b; }
+    button.small { padding:5px 10px; font-size:.8rem; margin-top:6px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid var(--line); font-size:.9rem; }
+    .scroll { overflow-x:auto; }
+    .empty { color:var(--muted); text-align:center; padding:14px; }
+    .q { border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:10px; }
+    .q ul { margin:6px 0 0; padding-left:20px; }
+    .correct { color:#166534; font-weight:600; }
+    .msg { font-size:.9rem; margin-left:8px; }
+    .error { color:#b91c1c; }
+    .ok { color:#166534; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin: Manage Exams</h1>
+    <div>
+      <a href="/dashboard.html">Dashboard</a>
+      <button type="button" id="logout">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Create a new exam</h2>
+      <form id="examForm">
+        <div class="full"><label for="title">Title *</label><input id="title" required maxlength="150"></div>
+        <div class="full"><label for="description">Description</label><input id="description" maxlength="500"></div>
+        <div><label for="duration">Duration (minutes) *</label><input id="duration" type="number" min="1" max="300" value="10" required></div>
+        <div><label for="perAttempt">Questions per student (optional)</label><input id="perAttempt" type="number" min="1" placeholder="Empty = all questions"></div>
+        <div class="full">
+          <button type="submit">Create exam</button>
+          <span class="msg" id="examMsg"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>All exams</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Title</th><th>Duration</th><th>In pool</th><th>Per student</th><th></th></tr></thead>
+          <tbody id="examRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="detail" hidden>
+      <h2 id="detailTitle"></h2>
+      <div id="questionList"></div>
+
+      <h3>Add a question</h3>
+      <form id="qForm">
+        <div class="full"><label for="qText">Question *</label><textarea id="qText" rows="2" required maxlength="500"></textarea></div>
+        <div><label for="optA">Option A *</label><input id="optA" required maxlength="200"></div>
+        <div><label for="optB">Option B *</label><input id="optB" required maxlength="200"></div>
+        <div><label for="optC">Option C *</label><input id="optC" required maxlength="200"></div>
+        <div><label for="optD">Option D *</label><input id="optD" required maxlength="200"></div>
+        <div>
+          <label for="correct">Correct option *</label>
+          <select id="correct"><option>A</option><option>B</option><option>C</option><option>D</option></select>
+        </div>
+        <div><label for="marks">Marks *</label><input id="marks" type="number" min="1" max="100" value="1" required></div>
+        <div class="full">
+          <button type="submit">Add question</button>
+          <span class="msg" id="qMsg"></span>
+        </div>
+      </form>
+
+      <h3>Add many questions at once</h3>
+      <p class="hint">One question per line, with parts separated by the <b>|</b> sign:<br>
+        <code>Question | Option A | Option B | Option C | Option D | Correct letter | Marks (optional)</code></p>
+      <textarea id="bulkText" rows="8"
+        placeholder="Which keyword creates an object in Java? | new | create | make | object | A&#10;What is 2 + 2? | 3 | 4 | 5 | 6 | B | 2"></textarea>
+      <p class="hint">Or load a .txt file that has the same format: <input type="file" id="bulkFile" accept=".txt,.csv,text/plain"></p>
+      <button type="button" id="bulkBtn">Import questions</button>
+      <span class="msg" id="bulkMsg"></span>
+      <div id="bulkErrors" class="error"></div>
+    </section>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let currentExamId = null;
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function getToken() {
+      try { return localStorage.getItem('token'); } catch (e) { return null; }
+    }
+
+    function logout() {
+      try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch (e) {}
+      window.location.href = '/login.html';
+    }
+
+    // Sends a request with the login token. Handles "not logged in" and "not admin" for us.
+    async function api(path, options = {}) {
+      const res = await fetch(path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + getToken()
+        }
+      });
+      if (res.status === 401) { logout(); throw new Error('Session expired'); }
+      if (res.status === 403) { window.location.href = '/dashboard.html'; throw new Error('Not allowed'); }
+      return res;
+    }
+
+    async function readError(res) {
+      const data = await res.json().catch(() => ({}));
+      return data.message || Object.values(data).join(', ') || 'Something went wrong';
+    }
+
+    function showMsg(el, text, isError) {
+      el.textContent = text;
+      el.className = 'msg ' + (isError ? 'error' : 'ok');
+    }
+
+    async function loadExams() {
+      const res = await api('/api/admin/exams');
+      const exams = await res.json();
+      $('examRows').innerHTML = exams.length
+        ? exams.map(e => `
+          <tr>
+            <td>${esc(e.title)}</td>
+            <td>${e.durationMinutes} min</td>
+            <td>${e.questionCount}</td>
+            <td>${e.questionsPerAttempt ?? 'All'}</td>
+            <td>
+              <button type="button" data-action="manage" data-id="${e.id}">Manage</button>
+              <button type="button" class="secondary" data-action="reset" data-id="${e.id}">Reset attempts</button>
+              <button type="button" class="danger" data-action="delete" data-id="${e.id}">Delete</button>
+            </td>
+          </tr>`).join('')
+        : '<tr><td colspan="5" class="empty">No exams yet. Create the first one above.</td></tr>';
+    }
+
+    async function openExam(id) {
+      const res = await api('/api/admin/exams/' + id);
+      if (!res.ok) { return; }
+      const exam = await res.json();
+      currentExamId = exam.id;
+
+      $('detail').hidden = false;
+      $('detailTitle').textContent = 'Questions in: ' + exam.title;
+      $('questionList').innerHTML = exam.questions.length
+        ? exam.questions.map((q, i) => `
+          <div class="q">
+            <b>${i + 1}. ${esc(q.questionText)}</b> (${q.marks} mark${q.marks > 1 ? 's' : ''})
+            <ul>
+              ${['A', 'B', 'C', 'D'].map(letter => `
+                <li class="${q.correctOption === letter ? 'correct' : ''}">
+                  ${letter}. ${esc(q['option' + letter])}${q.correctOption === letter ? ' (correct)' : ''}
+                </li>`).join('')}
+            </ul>
+            <button type="button" class="danger small" data-qid="${q.id}">Delete question</button>
+          </div>`).join('')
+        : '<p class="empty">No questions yet. Add the first one below.</p>';
+
+      $('detail').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ----- Create exam -----
+    $('examForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const res = await api('/api/admin/exams', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: $('title').value.trim(),
+          description: $('description').value.trim(),
+          durationMinutes: Number($('duration').value),
+          questionsPerAttempt: $('perAttempt').value ? Number($('perAttempt').value) : null
+        })
+      });
+      if (!res.ok) { showMsg($('examMsg'), await readError(res), true); return; }
+
+      const exam = await res.json();
+      $('examForm').reset();
+      $('duration').value = 10;
+      showMsg($('examMsg'), 'Exam created. Now add questions below.', false);
+      await loadExams();
+      openExam(exam.id);
+    });
+
+    // ----- Click Manage / Delete in the exam list -----
+    $('examRows').addEventListener('click', async e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const id = Number(btn.dataset.id);
+
+      if (btn.dataset.action === 'manage') {
+        openExam(id);
+      } else if (btn.dataset.action === 'reset') {
+        if (!confirm('Reset this exam? This deletes all student attempts and results for it, so everyone can take it again.')) return;
+        const res = await api('/api/admin/exams/' + id + '/attempts', { method: 'DELETE' });
+        if (!res.ok) { alert(await readError(res)); return; }
+        alert('Done. Students can take this exam again.');
+      } else if (btn.dataset.action === 'delete') {
+        if (!confirm('Delete this exam, its questions and all its results?')) return;
+        const res = await api('/api/admin/exams/' + id, { method: 'DELETE' });
+        if (!res.ok) { alert(await readError(res)); return; }
+        if (currentExamId === id) { currentExamId = null; $('detail').hidden = true; }
+        loadExams();
+      }
+    });
+
+    // ----- Add question -----
+    $('qForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const res = await api('/api/admin/exams/' + currentExamId + '/questions', {
+        method: 'POST',
+        body: JSON.stringify({
+          questionText: $('qText').value.trim(),
+          optionA: $('optA').value.trim(),
+          optionB: $('optB').value.trim(),
+          optionC: $('optC').value.trim(),
+          optionD: $('optD').value.trim(),
+          correctOption: $('correct').value,
+          marks: Number($('marks').value)
+        })
+      });
+      if (!res.ok) { showMsg($('qMsg'), await readError(res), true); return; }
+
+      $('qForm').reset();
+      $('marks').value = 1;
+      showMsg($('qMsg'), 'Question added.', false);
+      await openExam(currentExamId);
+      loadExams();
+    });
+
+    // ----- Delete question -----
+    $('questionList').addEventListener('click', async e => {
+      const btn = e.target.closest('button[data-qid]');
+      if (!btn) return;
+      if (!confirm('Delete this question?')) return;
+      const res = await api('/api/admin/exams/' + currentExamId + '/questions/' + btn.dataset.qid,
+                            { method: 'DELETE' });
+      if (!res.ok) { alert(await readError(res)); return; }
+      await openExam(currentExamId);
+      loadExams();
+    });
+
+    // ----- Import many questions -----
+    $('bulkFile').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { $('bulkText').value = reader.result; };
+      reader.readAsText(file);
+    });
+
+    $('bulkBtn').addEventListener('click', async () => {
+      $('bulkErrors').innerHTML = '';
+      const res = await api('/api/admin/exams/' + currentExamId + '/questions/import', {
+        method: 'POST',
+        body: JSON.stringify({ text: $('bulkText').value })
+      });
+      if (!res.ok) { showMsg($('bulkMsg'), await readError(res), true); return; }
+
+      const out = await res.json();
+      if (out.errors.length) {
+        showMsg($('bulkMsg'), 'Nothing was added. Fix these lines and try again:', true);
+        $('bulkErrors').innerHTML = '<ul>' + out.errors.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul>';
+        return;
+      }
+
+      $('bulkText').value = '';
+      $('bulkFile').value = '';
+      showMsg($('bulkMsg'), out.added + ' questions added.', false);
+      await openExam(currentExamId);
+      loadExams();
+    });
+
+    $('logout').addEventListener('click', logout);
+
+    // ----- Start: only admins may stay on this page -----
+    (async function init() {
+      if (!getToken()) { window.location.href = '/login.html'; return; }
+      const res = await api('/api/me');
+      const me = await res.json();
+      if (me.role !== 'ROLE_ADMIN') { window.location.href = '/dashboard.html'; return; }
+      loadExams();
+    })();
+  </script>
+</body>
+</html>

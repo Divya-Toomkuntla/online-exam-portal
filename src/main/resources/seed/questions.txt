@@ -1,0 +1,76 @@
+# Ready-made exams that are added when the app starts with an empty database.
+# A line starting with @exam begins a new exam:  @exam|Title|Description|Minutes|Questions per student
+# Every other line is one question:  Question | Option A | Option B | Option C | Option D | Correct letter
+
+@exam|Java Fundamentals|Core Java: syntax, OOP, collections and exceptions.|15|10
+Which keyword is used to create an object in Java? | new | create | make | object | A
+Which collection does not allow duplicate elements? | ArrayList | LinkedList | HashSet | Vector | C
+What is the size of an int in Java? | 8 bits | 16 bits | 32 bits | 64 bits | C
+Which method is the starting point of a Java program? | start() | main() | run() | init() | B
+Which keyword prevents a class from being inherited? | static | private | final | abstract | C
+Which interface stores data as key-value pairs? | List | Set | Queue | Map | D
+What does JVM stand for? | Java Virtual Machine | Java Variable Method | Joint Visual Mode | Java Verified Module | A
+Which keyword is used to handle an exception? | throw | catch | assert | import | B
+Which of these is not a primitive data type in Java? | int | boolean | String | double | C
+What is the default value of an uninitialized int instance variable? | null | 0 | 1 | undefined | B
+Which keyword is used to inherit a class? | implements | inherits | extends | super | C
+Which of these is used to compare the contents of two strings? | == | equals() | compare | = | B
+Which collection keeps insertion order and allows duplicates? | HashSet | TreeSet | ArrayList | HashMap | C
+What is method overloading? | Same method name with different parameters in one class | Same method in a child class with the same parameters | A method that calls itself | A method with no body | A
+Which access modifier makes a member visible only inside its own class? | public | protected | default | private | D
+Which block runs after try and catch whether or not an exception occurs? | static | finally | final | default | B
+Which of these is a checked exception? | NullPointerException | ArithmeticException | IOException | ArrayIndexOutOfBoundsException | C
+What does the static keyword mean for a variable? | It belongs to the class, not to each object | It can never change | It is hidden from other classes | It is stored in a file | A
+Which statement about a Java interface is correct? | It can be created with new | A class can implement multiple interfaces | It cannot have any methods | It must be declared final | B
+What is the parent class of all classes in Java? | Main | Class | Object | Super | C
+
+@exam|Spring Boot and REST|Spring Boot, REST APIs, JPA and JWT basics.|12|8
+Which annotation starts a Spring Boot application? | @SpringBootApplication | @Entity | @Service | @Bean | A
+Which annotation marks a class as a REST controller? | @Component | @RestController | @Repository | @Configuration | B
+Which HTTP method is normally used to create a new resource? | GET | DELETE | POST | HEAD | C
+Which HTTP status code means Not Found? | 200 | 401 | 404 | 500 | C
+Which annotation reads a value from the URL path, like /users/5? | @PathVariable | @RequestBody | @RequestHeader | @Value | A
+What does JPA stand for? | Java Persistence API | Java Program Access | Joint Process Application | Java Page Archive | A
+Which annotation marks a class as a database entity in JPA? | @Entity | @Column | @Autowired | @Transactional | A
+Which interface gives ready-made CRUD methods in Spring Data JPA? | JpaRepository | HttpServlet | Runnable | Serializable | A
+Which annotation converts the JSON request body into a Java object? | @ResponseBody | @RequestBody | @PathVariable | @RequestParam | B
+Which file normally holds the configuration of a Spring Boot app? | pom.xml | application.properties | Dockerfile | README.md | B
+What does HTTP status code 201 mean? | The request failed | The resource was created | Unauthorized | Server error | B
+What is dependency injection? | The framework supplies the objects a class needs | Copying files between projects | Compiling code faster | Encrypting a password | A
+Which HTTP method is used to remove a resource? | PUT | DELETE | PATCH | POST | B
+What does a JWT token do in a login system? | It proves who the user is on later requests | It stores the database | It styles the web page | It compiles the code | A
+Which Maven file lists the project dependencies? | pom.xml | application.properties | Dockerfile | .gitignore | A
+
+@exam|SQL and MySQL|Queries, joins, keys and constraints.|10|8
+Which SQL command is used to read data from a table? | INSERT | SELECT | UPDATE | DELETE | B
+Which clause filters rows in a SELECT query? | ORDER BY | GROUP BY | WHERE | LIMIT | C
+Which keyword removes duplicate rows from the result? | UNIQUE | DISTINCT | DIFFERENT | ONLY | B
+What does a PRIMARY KEY do? | Uniquely identifies each row in a table | Allows duplicate values | Deletes old rows | Sorts the table | A
+Which JOIN returns only the rows that match in both tables? | INNER JOIN | LEFT JOIN | FULL OUTER JOIN | CROSS JOIN | A
+Which command adds a new row to a table? | ADD ROW | INSERT INTO | PUT | CREATE ROW | B
+Which function counts the number of rows? | SUM() | COUNT() | TOTAL() | NUMBER() | B
+What does a FOREIGN KEY do? | Links a row to a row in another table | Encrypts the table | Sorts the rows | Creates a backup | A
+Which clause sorts the result? | SORT BY | ORDER BY | GROUP BY | ARRANGE | B
+Which command changes existing data in a table? | MODIFY | CHANGE | UPDATE | ALTER ROW | C
+Which clause groups rows so that aggregate functions work on each group? | GROUP BY | SORT | JOIN | LIMIT | A
+Which command removes a whole table and its data? | DELETE | TRUNCATE ROW | DROP TABLE | REMOVE TABLE | C
+What does the NOT NULL constraint mean? | The column must have a value | The column must be a number | The column is the primary key | The column is hidden | A
+Which operator checks if a value is in a list of values? | IN | HAS | INSIDE | CONTAINS | A
+Which statement about the LIKE operator is true? | It matches text patterns using % | It joins two tables | It deletes duplicate rows | It sorts text | A
+
+@exam|Web Basics|HTML, CSS and JavaScript fundamentals.|10|8
+Which HTML tag creates a hyperlink? | <link> | <a> | <href> | <url> | B
+Which CSS property changes the text color? | font-color | text-color | color | foreground | C
+Which keyword declares a variable that cannot be reassigned in JavaScript? | var | let | const | static | C
+Which HTML tag creates the largest heading? | <h6> | <h1> | <head> | <title> | B
+What does CSS stand for? | Cascading Style Sheets | Computer Style System | Creative Style Syntax | Colorful Style Sheets | A
+Which JavaScript method adds an item to the end of an array? | push() | pop() | shift() | add() | A
+Which operator checks both value and type in JavaScript? | == | = | === | != | C
+Which HTML tag creates an unordered list? | <ol> | <ul> | <li> | <list> | B
+Which CSS layout system is made for flexible rows and columns? | float | flexbox | table | inline | B
+Which JavaScript method selects an element by its id? | getElementById() | getElementsByClass() | selectById() | findId() | A
+What does the fetch() function do in JavaScript? | Sends an HTTP request to a server | Creates an HTML tag | Changes a CSS color | Stops the page from loading | A
+Which tag is used to include JavaScript in an HTML page? | <js> | <script> | <javascript> | <code> | B
+What does DOM stand for? | Document Object Model | Data Output Method | Digital Object Mode | Display Order Map | A
+Which HTTP method does a browser use when you simply open a web page? | POST | PUT | GET | DELETE | C
+Which CSS selector selects the element with the id menu? | .menu | #menu | menu | *menu | B

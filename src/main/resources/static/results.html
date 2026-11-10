@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Results - Online Exam Portal</title>
+  <style>
+    :root { --accent:#2563eb; --line:#e5e7eb; --muted:#6b7280; }
+    body { font-family: system-ui, sans-serif; background:#f5f6fa; color:#1f2430; margin:0; }
+    header { background:var(--accent); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+    header h1 { margin:0; font-size:1.3rem; }
+    header a { color:#fff; margin-right:12px; }
+    header button { border:0; border-radius:6px; padding:9px 14px; font:inherit; cursor:pointer; background:#1e40af; color:#fff; }
+    main { max-width:760px; margin:24px auto; padding:0 16px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:18px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); font-size:.9rem; }
+    .scroll { overflow-x:auto; }
+    .muted { color:var(--muted); }
+    .pass { color:#166534; font-weight:600; }
+    .fail { color:#b91c1c; font-weight:600; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My Results</h1>
+    <div>
+      <a href="/dashboard.html">Dashboard</a>
+      <button type="button" id="logout">Logout</button>
+    </div>
+  </header>
+  <main>
+    <div class="card">
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Exam</th><th>Score</th><th>Percent</th><th>Date</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="4" class="muted">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function getToken() {
+      try { return localStorage.getItem('token'); } catch (e) { return null; }
+    }
+
+    function logout() {
+      try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch (e) {}
+      window.location.href = '/login.html';
+    }
+
+    // The server sends a time like 2026-11-09T12:55:01.123. We show it as "2026-11-09 12:55".
+    function formatTime(text) {
+      return text ? String(text).replace('T', ' ').slice(0, 16) : '';
+    }
+
+    (async function init() {
+      if (!getToken()) { window.location.href = '/login.html'; return; }
+
+      const res = await fetch('/api/results', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+      if (res.status === 401) { logout(); return; }
+      if (!res.ok) { $('rows').innerHTML = '<tr><td colspan="4" class="muted">Could not load results.</td></tr>'; return; }
+
+      const results = await res.json();
+      $('rows').innerHTML = results.length
+        ? results.map(r => {
+            const percent = r.totalMarks > 0 ? Math.round(r.score * 100 / r.totalMarks) : 0;
+            return `<tr>
+              <td>${esc(r.examTitle)}</td>
+              <td>${r.score} / ${r.totalMarks}</td>
+              <td class="${percent >= 40 ? 'pass' : 'fail'}">${percent}%</td>
+              <td>${esc(formatTime(r.attemptedAt))}</td>
+            </tr>`;
+          }).join('')
+        : '<tr><td colspan="4" class="muted">You have not taken any exam yet.</td></tr>';
+    })();
+
+    $('logout').addEventListener('click', logout);
+  </script>
+</body>
+</html>
