@@ -8,8 +8,8 @@ import com.divya.examportal.repository.UserRepository;
 import com.divya.examportal.service.QuestionImportService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -20,12 +20,12 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Adds sample data when the app starts with an empty database:
- *  - one admin account (admin@exam.com / Admin@123) for testing
  *  - ready-made exams read from src/main/resources/seed/questions.txt
- * It does NOT run in the "prod" profile.
+ *  - one test admin account (admin@exam.com / Admin@123), only when app.seed-test-admin is true.
+ *    This is true on your own computer and FALSE in production (see application-prod.properties),
+ *    where the real admin is created from the ADMIN_EMAIL and ADMIN_PASSWORD variables instead.
  */
 @Component
-@Profile("!prod")
 public class DataInitializer implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
@@ -34,20 +34,25 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final QuestionImportService importService;
+    private final boolean seedTestAdmin;
 
     public DataInitializer(ExamRepository examRepository,
                            UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
-                           QuestionImportService importService) {
+                           QuestionImportService importService,
+                           @Value("${app.seed-test-admin:true}") boolean seedTestAdmin) {
         this.examRepository = examRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.importService = importService;
+        this.seedTestAdmin = seedTestAdmin;
     }
 
     @Override
     public void run(String... args) {
-        createAdminIfMissing();
+        if (seedTestAdmin) {
+            createAdminIfMissing();
+        }
         createSampleExamsIfMissing();
     }
 
