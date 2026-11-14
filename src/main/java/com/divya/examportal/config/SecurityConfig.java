@@ -1,7 +1,6 @@
 package com.divya.examportal.config;
 
 import com.divya.examportal.security.JwtAuthFilter;
-import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -30,7 +29,8 @@ public class SecurityConfig {
                         // Anyone can open the pages, register, log in, and see the health check
                         .requestMatchers("/", "/*.html", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/api/auth/**", "/api/health").permitAll()
-                        .requestMatchers(PathRequest.toH2Console()).permitAll()
+                        // Plain path (not PathRequest.toH2Console()), so it also works in production where the H2 console is switched off
+                        .requestMatchers("/h2-console/**").permitAll()
                         // Only admins
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Everything else needs a valid login token
