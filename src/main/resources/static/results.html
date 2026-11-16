@@ -4,13 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My Results - Online Exam Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root { --accent:#2563eb; --line:#e5e7eb; --muted:#6b7280; }
-    body { font-family: system-ui, sans-serif; background:#f5f6fa; color:#1f2430; margin:0; }
+    :root { --accent:#0a0a0a; --line:#e6e6e6; --muted:#666666; }
+    body { font-family: system-ui, sans-serif; background:#ffffff; color:#0a0a0a; margin:0; }
     header { background:var(--accent); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
     header h1 { margin:0; font-size:1.3rem; }
     header a { color:#fff; margin-right:12px; }
-    header button { border:0; border-radius:6px; padding:9px 14px; font:inherit; cursor:pointer; background:#1e40af; color:#fff; }
+    header button { border:0; border-radius:6px; padding:9px 14px; font:inherit; cursor:pointer; background:#3a3a3a; color:#fff; }
     main { max-width:760px; margin:24px auto; padding:0 16px; }
     .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:18px; }
     table { width:100%; border-collapse:collapse; }
@@ -19,6 +22,16 @@
     .muted { color:var(--muted); }
     .pass { color:#166534; font-weight:600; }
     .fail { color:#b91c1c; font-weight:600; }
+
+    /* black and white theme, matching the home page */
+    body { font-family: "Instrument Sans", system-ui, "Segoe UI", sans-serif; }
+    h1, h2, h3 { font-family: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif; letter-spacing:-0.02em; }
+    header button { background:#ffffff !important; color:#0a0a0a !important; }
+    header a { text-decoration:none; }
+    .badge.admin { background:#0a0a0a; color:#ffffff; }
+    .card, .exam, section { border-radius:10px; }
+    button:hover, a.btn:hover { background:#3a3a3a; }
+    header button:hover { background:#e6e6e6 !important; }
   </style>
 </head>
 <body>

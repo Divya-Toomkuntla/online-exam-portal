@@ -4,22 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Exam - Online Exam Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root { --accent:#2563eb; --line:#e5e7eb; --muted:#6b7280; }
-    body { font-family: system-ui, sans-serif; background:#f5f6fa; color:#1f2430; margin:0; }
+    :root { --accent:#0a0a0a; --line:#e6e6e6; --muted:#666666; }
+    body { font-family: system-ui, sans-serif; background:#ffffff; color:#0a0a0a; margin:0; }
     header { background:var(--accent); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; position:sticky; top:0; z-index:5; }
     header h1 { margin:0; font-size:1.1rem; }
-    #timer { font-size:1.2rem; font-weight:700; font-variant-numeric:tabular-nums; background:#1e40af; padding:4px 12px; border-radius:6px; }
+    #timer { font-size:1.2rem; font-weight:700; font-variant-numeric:tabular-nums; background:#3a3a3a; padding:4px 12px; border-radius:6px; }
     #timer.low { background:#dc2626; }
     main { max-width:760px; margin:24px auto; padding:0 16px; }
     .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:16px; }
     .opt { display:block; padding:8px 10px; border:1px solid var(--line); border-radius:6px; margin-top:6px; cursor:pointer; }
-    .opt:hover { background:#f3f4f6; }
+    .opt:hover { background:#f7f7f7; }
     button, a.btn { border:0; border-radius:6px; padding:10px 16px; font:inherit; cursor:pointer; background:var(--accent); color:#fff; text-decoration:none; display:inline-block; }
     button:disabled { opacity:.6; cursor:default; }
     .muted { color:var(--muted); }
     .error { color:#b91c1c; }
-    .warn { background:#fef3c7; color:#92400e; border-radius:6px; padding:10px 12px; }
+    .warn { background:#f0f0f0; color:#0a0a0a; border-radius:6px; padding:10px 12px; }
     .score { font-size:2rem; font-weight:700; margin:0; }
     .review { border-left:5px solid var(--line); }
     .review.right { border-left-color:#16a34a; }
@@ -27,6 +30,16 @@
     .review li { margin:3px 0; }
     .tick { color:#166534; font-weight:600; }
     .cross { color:#b91c1c; font-weight:600; }
+
+    /* black and white theme, matching the home page */
+    body { font-family: "Instrument Sans", system-ui, "Segoe UI", sans-serif; }
+    h1, h2, h3 { font-family: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif; letter-spacing:-0.02em; }
+    header button { background:#ffffff !important; color:#0a0a0a !important; }
+    header a { text-decoration:none; }
+    .badge.admin { background:#0a0a0a; color:#ffffff; }
+    .card, .exam, section { border-radius:10px; }
+    button:hover, a.btn:hover { background:#3a3a3a; }
+    header button:hover { background:#e6e6e6 !important; }
   </style>
 </head>
 <body>
@@ -57,7 +70,7 @@
         <p id="percentText" class="muted"></p>
         <p id="note" class="warn" hidden></p>
         <a class="btn" href="/dashboard.html">Back to exams</a>
-        <a class="btn" href="/results.html" style="background:#475569">My results</a>
+        <a class="btn" href="/results.html" style="background:#3a3a3a">My results</a>
       </div>
       <h3>Review</h3>
       <div id="review"></div>
