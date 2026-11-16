@@ -4,41 +4,491 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Online Exam Portal</title>
+  <meta name="description" content="A timed exam portal built with Java and Spring Boot. Try a sample question, then sign in to take a full exam.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: system-ui, sans-serif; background:#f5f6fa; color:#1f2430; margin:0; }
-    header { background:#2563eb; color:#fff; padding:18px 16px; }
-    header h1 { margin:0; font-size:1.3rem; }
-    main { max-width:700px; margin:24px auto; padding:0 16px; }
-    .card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:18px; margin-bottom:16px; }
-    code { background:#eef2ff; padding:2px 6px; border-radius:4px; }
-    a.btn { display:inline-block; background:#2563eb; color:#fff; padding:10px 16px; border-radius:6px; text-decoration:none; }
-    #health { white-space:pre; font-family:monospace; }
+    :root {
+      --paper: #f6f8fc;
+      --sheet: #ffffff;
+      --ink: #0e1a3a;
+      --muted: #55627f;
+      --line: #d9e0ee;
+      --marker: #ffd84d;
+      --blue: #2447d6;
+      --right: #178a5c;
+      --right-bg: #e3f6ec;
+      --wrong: #d1432a;
+      --wrong-bg: #fdebe6;
+      --head: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+      --body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:1.0625rem; line-height:1.6; }
+    h1, h2, h3 { font-family:var(--head); line-height:1.1; margin:0; letter-spacing:-0.02em; }
+    p { margin:0; }
+    a { color:inherit; }
+    :focus-visible { outline:3px solid var(--blue); outline-offset:3px; border-radius:6px; }
+    .wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+
+    /* top bar */
+    .bar { display:flex; align-items:center; justify-content:space-between; padding:18px 0; }
+    .brand { font-family:var(--head); font-weight:800; font-size:1.2rem; text-decoration:none; }
+    .bar nav { display:flex; align-items:center; gap:22px; }
+    .bar nav a { text-decoration:none; font-weight:500; }
+    .bar nav a:hover { text-decoration:underline; text-underline-offset:4px; }
+    .pill { background:var(--ink); color:#fff; padding:9px 18px; border-radius:999px; }
+    .bar nav a.pill:hover { text-decoration:none; background:var(--blue); }
+
+    /* hero */
+    .hero { display:grid; grid-template-columns:1.05fr 0.95fr; gap:48px; align-items:center; padding:40px 0 72px; }
+    .hero h1 { font-size:clamp(2.6rem, 6.2vw, 4.6rem); font-weight:800; }
+    .hero h1 span { background:linear-gradient(transparent 62%, var(--marker) 62% 92%, transparent 92%); }
+    .hero .lede { margin-top:22px; max-width:30rem; color:var(--muted); font-size:1.15rem; }
+    .actions { margin-top:30px; display:flex; flex-wrap:wrap; gap:12px; }
+    .btn { display:inline-block; text-decoration:none; font-weight:600; padding:13px 22px; border-radius:12px; border:2px solid var(--ink); transition:transform .15s, background .15s, color .15s; }
+    .btn.solid { background:var(--ink); color:#fff; }
+    .btn.solid:hover { background:var(--blue); border-color:var(--blue); }
+    .btn.line:hover { background:var(--ink); color:#fff; }
+    .btn:active { transform:translateY(1px); }
+
+    /* the try-it sheet */
+    .sheet { background:var(--sheet); border:2px solid var(--ink); border-radius:20px; padding:26px; box-shadow:8px 8px 0 var(--ink); position:relative; }
+    .sheet-top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+    .sheet-top .kicker { font-weight:600; color:var(--muted); font-size:.95rem; }
+    .timer { position:relative; width:64px; height:64px; flex:none; }
+    .timer svg { width:64px; height:64px; transform:rotate(-90deg); }
+    .timer .track { fill:none; stroke:var(--line); stroke-width:6; }
+    .timer .run { fill:none; stroke:var(--blue); stroke-width:6; stroke-linecap:round; stroke-dasharray:163.36; stroke-dashoffset:0; transition:stroke-dashoffset 1s linear, stroke .3s; }
+    .timer.low .run { stroke:var(--wrong); }
+    .timer b { position:absolute; inset:0; display:grid; place-items:center; font-family:var(--head); font-size:1.15rem; }
+    .q { font-family:var(--head); font-weight:700; font-size:1.4rem; line-height:1.25; min-height:3.6rem; }
+    .opts { display:grid; gap:10px; margin-top:18px; }
+    .opt { display:flex; align-items:center; gap:14px; text-align:left; width:100%; font:inherit; color:inherit; background:var(--paper); border:2px solid var(--line); border-radius:14px; padding:11px 14px; cursor:pointer; transition:border-color .15s, background .15s, transform .15s; }
+    .opt:hover:not(:disabled) { border-color:var(--ink); transform:translateX(3px); }
+    .opt:disabled { cursor:default; }
+    .bubble { flex:none; width:32px; height:32px; border-radius:50%; border:2px solid var(--ink); display:grid; place-items:center; font-weight:700; font-size:.9rem; background:#fff; transition:background .15s, color .15s; }
+    .opt.right { border-color:var(--right); background:var(--right-bg); }
+    .opt.right .bubble { background:var(--right); border-color:var(--right); color:#fff; }
+    .opt.wrong { border-color:var(--wrong); background:var(--wrong-bg); }
+    .opt.wrong .bubble { background:var(--wrong); border-color:var(--wrong); color:#fff; }
+    .feedback { min-height:3.2rem; margin-top:14px; font-size:.98rem; color:var(--muted); }
+    .feedback strong { color:var(--ink); }
+    .sheet-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:6px; }
+    .progress { color:var(--muted); font-size:.95rem; }
+    .next { font:inherit; font-weight:600; background:var(--marker); color:var(--ink); border:2px solid var(--ink); border-radius:10px; padding:9px 16px; cursor:pointer; }
+    .next:hover { background:#ffe27d; }
+    .next[hidden] { display:none; }
+    .done { text-align:center; padding:18px 0 6px; }
+    .done h3 { font-size:2.2rem; }
+    .done p { color:var(--muted); margin:10px auto 22px; max-width:22rem; }
+    .done .actions { justify-content:center; margin-top:0; }
+
+    /* live numbers */
+    .live { border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); background:var(--sheet); }
+    .live .wrap { display:grid; grid-template-columns:repeat(3,1fr) 1.3fr; }
+    .live .cell { padding:26px 20px; border-right:1px solid var(--line); }
+    .live .cell:first-child { padding-left:0; }
+    .live .cell:last-child { border-right:0; }
+    .live .num { font-family:var(--head); font-weight:800; font-size:2.6rem; line-height:1; }
+    .live .what { color:var(--muted); margin-top:6px; }
+    .dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:#c4cbdb; margin-right:8px; }
+    .dot.up { background:var(--right); box-shadow:0 0 0 4px var(--right-bg); }
+    .dot.down { background:var(--wrong); }
+
+    /* sections */
+    section.block { padding:76px 0 0; }
+    section.block > .wrap > h2 { font-size:clamp(1.9rem, 4vw, 2.6rem); max-width:32rem; }
+    .steps { list-style:none; margin:34px 0 0; padding:0; display:grid; grid-template-columns:repeat(3,1fr); gap:28px; counter-reset:step; }
+    .steps li { counter-increment:step; border-top:4px solid var(--ink); padding-top:16px; }
+    .steps li::before { content:counter(step); display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:var(--marker); border:2px solid var(--ink); font-family:var(--head); font-weight:800; margin-bottom:12px; }
+    .steps h3 { font-size:1.35rem; margin-bottom:6px; }
+    .steps p { color:var(--muted); }
+
+    dl.facts { margin:34px 0 0; display:grid; grid-template-columns:repeat(2,1fr); gap:0 56px; }
+    dl.facts div { padding:20px 0; border-top:1px solid var(--line); }
+    dl.facts dt { font-family:var(--head); font-weight:700; font-size:1.2rem; }
+    dl.facts dd { margin:4px 0 0; color:var(--muted); }
+
+    .stack { margin-top:30px; display:flex; flex-wrap:wrap; gap:10px; }
+    .stack span { border:2px solid var(--ink); border-radius:999px; padding:6px 16px; font-weight:600; background:var(--sheet); }
+
+    footer { margin-top:84px; background:var(--ink); color:#fff; }
+    footer .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding-top:30px; padding-bottom:30px; }
+    footer a { color:var(--marker); font-weight:600; }
+
+    /* ---------- motion ---------- */
+    .progressbar { position:fixed; top:0; left:0; height:4px; width:100%; background:var(--marker); transform-origin:left; transform:scaleX(0); z-index:50; }
+    .bar-wrap { position:sticky; top:0; z-index:40; background:rgba(246,248,252,.86); backdrop-filter:blur(8px); transition:box-shadow .25s; }
+    .bar-wrap.stuck { box-shadow:0 1px 0 var(--line), 0 8px 24px rgba(14,26,58,.06); }
+
+    /* the heading highlight draws itself, then the rest of the hero follows */
+    .hero h1 span { background-repeat:no-repeat; background-size:0% 100%; animation:draw .9s .55s cubic-bezier(.2,.7,.2,1) forwards; }
+    @keyframes draw { to { background-size:100% 100%; } }
+    @keyframes rise { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:none; } }
+    @keyframes pop  { from { opacity:0; transform:translateY(30px) scale(.96); } to { opacity:1; transform:none; } }
+    .hero h1 { animation:rise .7s cubic-bezier(.2,.7,.2,1) both; }
+    .hero .lede { animation:rise .7s .15s cubic-bezier(.2,.7,.2,1) both; }
+    .hero .actions { animation:rise .7s .3s cubic-bezier(.2,.7,.2,1) both; }
+    .sheet { animation:pop .8s .25s cubic-bezier(.2,.7,.2,1) backwards; transition:transform .2s ease-out, box-shadow .2s; will-change:transform; }
+
+    /* answer bubbles drifting behind the hero, like a marked answer sheet */
+    .hero { position:relative; }
+    .drift { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:-1; }
+    .drift i { position:absolute; width:var(--s); height:var(--s); border-radius:50%; border:2px solid var(--ink); opacity:.16; left:var(--x); top:var(--y); animation:float var(--t) ease-in-out infinite alternate, fillin 6s var(--d) ease-in-out infinite; }
+    @keyframes float { from { transform:translateY(0) rotate(0); } to { transform:translateY(-26px) rotate(12deg); } }
+    @keyframes fillin { 0%,55% { background:transparent; } 70%,100% { background:var(--marker); } }
+
+    /* hover and press feedback */
+    .btn { position:relative; }
+    .btn.solid:hover { transform:translateY(-2px); box-shadow:0 8px 0 -2px rgba(14,26,58,.25); }
+    .btn.line:hover { transform:translateY(-2px); }
+    .opt:hover:not(:disabled) .bubble { background:var(--marker); }
+    .opt.right { animation:nudge .35s; }
+    .opt.wrong { animation:shake .35s; }
+    @keyframes nudge { 40% { transform:scale(1.025); } }
+    @keyframes shake { 20%,60% { transform:translateX(-6px); } 40%,80% { transform:translateX(6px); } }
+    .timer.low { animation:beat 1s infinite; }
+    @keyframes beat { 50% { transform:scale(1.1); } }
+    .feedback { animation:rise .3s both; }
+    dl.facts div { transition:transform .2s, border-color .2s, padding-left .2s; }
+    dl.facts div:hover { transform:translateX(6px); border-top-color:var(--ink); }
+    .stack span { transition:transform .2s, background .2s; }
+    .stack span:hover { transform:translateY(-3px) rotate(-2deg); background:var(--marker); }
+
+    /* sections reveal as you scroll (only when JavaScript is running) */
+    .js .reveal { opacity:0; transform:translateY(28px); transition:opacity .7s cubic-bezier(.2,.7,.2,1) var(--d, 0s), transform .7s cubic-bezier(.2,.7,.2,1) var(--d, 0s); }
+    .js .reveal.in { opacity:1; transform:none; }
+    .steps li { position:relative; border-top:0; }
+    .steps li::after { content:""; position:absolute; top:0; left:0; right:0; height:4px; background:var(--ink); transform-origin:left; transform:scaleX(0); transition:transform .9s cubic-bezier(.2,.7,.2,1) var(--d, 0s); }
+    .js .steps li.in::after, .steps li::after { transform:scaleX(1); }
+    .js .steps li:not(.in)::after { transform:scaleX(0); }
+
+    @media (max-width: 880px) {
+      .hero { grid-template-columns:1fr; gap:40px; padding-top:16px; }
+      .live .wrap { grid-template-columns:repeat(3,1fr); }
+      .live .cell:nth-child(3) { border-right:0; }
+      .live .cell:last-child { grid-column:1 / -1; border-top:1px solid var(--line); padding-left:0; }
+      .steps { grid-template-columns:1fr; }
+      dl.facts { grid-template-columns:1fr; }
+    }
+    @media (max-width: 520px) {
+      .wrap { padding:0 16px; }
+      .bar nav .hide-sm { display:none; }
+      .sheet { padding:18px; box-shadow:5px 5px 0 var(--ink); }
+      .live .num { font-size:2rem; }
+      .live .cell { padding:20px 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition:none !important; animation:none !important; scroll-behavior:auto !important; }
+      .hero h1 span { background-size:100% 100%; }
+      .js .reveal { opacity:1; transform:none; }
+      .drift { display:none; }
+    }
+
+    /* ===== MINIMAL BLACK AND WHITE ===== */
+    :root { --paper:#ffffff; --sheet:#ffffff; --ink:#0a0a0a; --muted:#666666; --line:#e6e6e6; --marker:#0a0a0a; --blue:#0a0a0a; --right:#1a7f4b; --right-bg:#eef8f2; --wrong:#c23b22; --wrong-bg:#fcf0ed; }
+    .bar-wrap { background:rgba(255,255,255,.92); }
+    .bar-wrap.stuck { box-shadow:0 1px 0 var(--line); }
+    .drift { display:none; }
+    .hero { padding:72px 0 96px; gap:64px; }
+    .hero h1 { font-weight:700; letter-spacing:-0.045em; font-size:clamp(3rem, 8vw, 5.8rem); line-height:1; }
+    .hero h1 span { background-image:linear-gradient(transparent 84%, #0a0a0a 84% 93%, transparent 93%); }
+    .hero .lede { font-size:1.2rem; }
+    .btn, .pill { border-radius:6px; }
+    .btn.solid:hover, .bar nav a.pill:hover { background:#3a3a3a; border-color:#3a3a3a; box-shadow:none; }
+    .btn.solid:hover { transform:none; }
+    .sheet { border:1px solid var(--ink); border-radius:10px; box-shadow:none; }
+    .opt { border-width:1px; border-radius:8px; background:#fff; }
+    .opt:hover:not(:disabled) { transform:none; background:#fafafa; border-color:var(--ink); }
+    .opt:hover:not(:disabled) .bubble { background:var(--ink); color:#fff; }
+    .bubble { border-width:1px; }
+    .next { background:var(--ink); color:#fff; border-radius:6px; }
+    .next:hover { background:#3a3a3a; }
+    .live { border-top:1px solid var(--ink); border-bottom:1px solid var(--line); }
+    .live .num { font-weight:700; letter-spacing:-0.03em; }
+    section.block { padding-top:112px; }
+    .steps li::before { background:#fff; color:var(--ink); border:1px solid var(--ink); }
+    .steps li::after { height:1px; }
+    .stack span { border:1px solid var(--line); border-radius:6px; font-weight:500; background:#fff; }
+    .stack span:hover { background:var(--ink); color:#fff; transform:none; }
+    footer { background:#fff; color:var(--ink); border-top:1px solid var(--ink); }
+    footer a { color:var(--ink); text-decoration:underline; text-underline-offset:4px; }
   </style>
 </head>
 <body>
-  <header><h1>Online Exam Portal</h1></header>
-  <main>
-    <div class="card">
-      <h2>The portal is running</h2>
-      <p>Admins create timed exams. Students take them and see their scores.</p>
-      <a class="btn" href="/login.html">Go to Login / Register</a>
+  <script>document.documentElement.classList.add('js');</script>
+  <div class="progressbar" id="pbar" aria-hidden="true"></div>
+  <div class="bar-wrap" id="barwrap"><div class="wrap">
+    <header class="bar">
+      <a class="brand" href="/">Online Exam Portal</a>
+      <nav>
+        <a class="hide-sm" href="#how">How it works</a>
+        <a class="hide-sm" href="https://github.com/Divya-Toomkuntla/online-exam-portal" target="_blank" rel="noopener">GitHub</a>
+        <a class="pill" href="/login.html">Log in</a>
+      </nav>
+    </header>
+  </div></div>
+  <div class="wrap">
+    <main>
+      <div class="hero">
+        <div class="drift" aria-hidden="true">
+          <i style="--s:46px;--x:2%;--y:8%;--t:5s;--d:0s"></i>
+          <i style="--s:30px;--x:44%;--y:4%;--t:6s;--d:1.5s"></i>
+          <i style="--s:58px;--x:92%;--y:60%;--t:7s;--d:3s"></i>
+          <i style="--s:26px;--x:38%;--y:88%;--t:5.5s;--d:4.5s"></i>
+          <i style="--s:38px;--x:6%;--y:78%;--t:6.5s;--d:2s"></i>
+        </div>
+        <div>
+          <h1>Answer against <span>the clock.</span></h1>
+          <p class="lede">A timed exam portal built with Spring Boot. Admins write the exams, students sit them, and the score arrives the moment time is up.</p>
+          <div class="actions">
+            <a class="btn solid" href="/login.html">Register and take an exam</a>
+            <a class="btn line" href="https://github.com/Divya-Toomkuntla/online-exam-portal" target="_blank" rel="noopener">Read the code</a>
+          </div>
+        </div>
+
+        <!-- The try-it sheet: a real timed question, right on the home page -->
+        <div class="sheet" id="sheet" aria-label="Sample question">
+          <div id="quiz">
+            <div class="sheet-top">
+              <span class="kicker">Try a sample question</span>
+              <div class="timer" id="timer" role="timer" aria-label="Time left">
+                <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="track" cx="32" cy="32" r="26"/><circle class="run" id="run" cx="32" cy="32" r="26"/></svg>
+                <b id="secs">20</b>
+              </div>
+            </div>
+            <p class="q" id="qtext"></p>
+            <div class="opts" id="opts" role="group" aria-labelledby="qtext"></div>
+            <p class="feedback" id="feedback" aria-live="polite"></p>
+            <div class="sheet-foot">
+              <span class="progress" id="progress"></span>
+              <button class="next" id="next" type="button" hidden>Next question</button>
+            </div>
+          </div>
+          <div class="done" id="done" hidden>
+            <h3 id="finalScore"></h3>
+            <p id="finalNote"></p>
+            <div class="actions">
+              <a class="btn solid" href="/login.html">Take a full exam</a>
+              <button class="btn line" id="again" type="button" style="font:inherit;font-weight:600;background:none;cursor:pointer">Try again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="live reveal" aria-label="Live numbers from the server">
+    <div class="wrap">
+      <div class="cell"><div class="num" id="sExams">-</div><div class="what">exams ready</div></div>
+      <div class="cell"><div class="num" id="sQuestions">-</div><div class="what">questions in the bank</div></div>
+      <div class="cell"><div class="num" id="sUsers">-</div><div class="what">registered users</div></div>
+      <div class="cell"><div class="num" style="font-size:1.3rem;line-height:1.3"><span class="dot" id="dot"></span><span id="status">Waking the server</span></div><div class="what" id="statusNote">The free host sleeps when idle, so the first visit can take a minute.</div></div>
     </div>
-    <div class="card">
-      <h3>Health check</h3>
-      <div id="health">Loading...</div>
+  </div>
+
+  <div class="wrap">
+    <section class="block" id="how">
+      <h2 class="reveal">From sign-up to score in three steps</h2>
+      <ol class="steps">
+        <li class="reveal" style="--d:0s"><h3>Register</h3><p>Create a student account. Passwords are stored as BCrypt hashes and logins use signed JWT tokens.</p></li>
+        <li class="reveal" style="--d:.15s"><h3>Sit an exam</h3><p>Pick an exam and the timer starts. Each student gets a random set of questions, in random order, with shuffled options.</p></li>
+        <li class="reveal" style="--d:.3s"><h3>Review your answers</h3><p>Submit, or let the time run out. You see your score and every question with the correct answer.</p></li>
+      </ol>
+    </section>
+
+    <section class="block">
+      <h2 class="reveal">What the server takes care of</h2>
+      <dl class="facts">
+        <div class="reveal" style="--d:0s"><dt>One attempt per exam</dt><dd>Enforced by a unique constraint in the database, not just the page.</dd></div>
+        <div class="reveal" style="--d:.1s"><dt>The timer is checked twice</dt><dd>The browser counts down, and the server rejects answers that arrive after time is up.</dd></div>
+        <div class="reveal" style="--d:.2s"><dt>Answers stay on the server</dt><dd>The correct answers are not sent to the browser until the exam is submitted.</dd></div>
+        <div class="reveal" style="--d:.3s"><dt>Separate admin tools</dt><dd>Admins create exams, import many questions at once, and reset attempts. Students cannot reach these.</dd></div>
+      </dl>
+      <div class="stack reveal" aria-label="Technology">
+        <span>Java 21</span><span>Spring Boot</span><span>Spring Security</span><span>JWT</span><span>Spring Data JPA</span><span>MySQL on TiDB Cloud</span><span>Docker</span><span>Render</span>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="wrap">
+      <span>Built by Divya Toomkuntla</span>
+      <a href="https://github.com/Divya-Toomkuntla/online-exam-portal" target="_blank" rel="noopener">Source code on GitHub</a>
     </div>
-    <div class="card">
-      <h3>See the database tables</h3>
-      <p>Open <a href="/h2-console" target="_blank">/h2-console</a> and use:</p>
-      <p>JDBC URL: <code>jdbc:h2:mem:examdb</code><br>
-         User: <code>sa</code> &nbsp; Password: <i>(leave empty)</i></p>
-    </div>
-  </main>
+  </footer>
+
   <script>
+    // ---------- Sample questions (these run in the browser only) ----------
+    const QUESTIONS = [
+      { q: "Which keyword makes a Java class inherit from another class?",
+        o: ["implements", "extends", "inherits", "super"], a: 1,
+        why: "extends is used for class inheritance. implements is for interfaces." },
+      { q: "What does the HTTP status code 404 mean?",
+        o: ["Server error", "Not found", "Unauthorized", "Created"], a: 1,
+        why: "404 means the server could not find what was asked for." },
+      { q: "Which SQL clause filters rows before they are grouped?",
+        o: ["HAVING", "ORDER BY", "WHERE", "LIMIT"], a: 2,
+        why: "WHERE filters rows first. HAVING filters the groups afterwards." },
+      { q: "What does JWT stand for?",
+        o: ["Java Web Token", "JSON Web Token", "JavaScript Web Tool", "Joint Web Transfer"], a: 1,
+        why: "A JSON Web Token is a signed text the server gives you after login." }
+    ];
+    const SECONDS = 20, CIRC = 163.36;
+    const $ = id => document.getElementById(id);
+    let idx = 0, score = 0, locked = false, left = SECONDS, tick = null;
+
+    function showQuestion() {
+      const item = QUESTIONS[idx];
+      locked = false;
+      $('qtext').textContent = item.q;
+      $('feedback').innerHTML = '';
+      $('next').hidden = true;
+      $('progress').textContent = 'Question ' + (idx + 1) + ' of ' + QUESTIONS.length;
+      const box = $('opts');
+      box.innerHTML = '';
+      item.o.forEach((text, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'opt';
+        b.innerHTML = '<span class="bubble">' + 'ABCD'[i] + '</span><span></span>';
+        b.lastChild.textContent = text;
+        b.addEventListener('click', () => answer(i));
+        box.appendChild(b);
+      });
+      startTimer();
+    }
+
+    function startTimer() {
+      clearInterval(tick);
+      left = SECONDS;
+      paintTimer();
+      tick = setInterval(() => {
+        left--;
+        paintTimer();
+        if (left <= 0) { clearInterval(tick); answer(-1); }
+      }, 1000);
+    }
+
+    function paintTimer() {
+      $('secs').textContent = Math.max(left, 0);
+      $('run').style.strokeDashoffset = CIRC * (1 - Math.max(left, 0) / SECONDS);
+      $('timer').classList.toggle('low', left <= 5);
+    }
+
+    function answer(choice) {
+      if (locked) return;
+      locked = true;
+      clearInterval(tick);
+      const item = QUESTIONS[idx];
+      const buttons = $('opts').querySelectorAll('.opt');
+      buttons.forEach((b, i) => {
+        b.disabled = true;
+        if (i === item.a) b.classList.add('right');
+        else if (i === choice) b.classList.add('wrong');
+      });
+      let lead;
+      if (choice === item.a) { score++; lead = 'Correct. '; }
+      else if (choice === -1) { lead = 'Time is up. '; }
+      else { lead = 'Not quite. '; }
+      $('feedback').innerHTML = '<strong></strong> ';
+      $('feedback').firstChild.textContent = lead;
+      $('feedback').appendChild(document.createTextNode(item.why));
+      $('next').textContent = idx === QUESTIONS.length - 1 ? 'See my score' : 'Next question';
+      $('next').hidden = false;
+      $('next').focus();
+    }
+
+    function finish() {
+      $('quiz').hidden = true;
+      $('done').hidden = false;
+      $('finalScore').textContent = score + ' out of ' + QUESTIONS.length;
+      $('finalNote').textContent = score === QUESTIONS.length
+        ? 'A perfect round. The real exams have 8 to 10 questions each, with a longer timer.'
+        : 'The real exams have 8 to 10 questions each, with a longer timer. Register to try them.';
+    }
+
+    $('next').addEventListener('click', () => {
+      if (idx === QUESTIONS.length - 1) finish(); else { idx++; showQuestion(); }
+    });
+    $('again').addEventListener('click', () => {
+      idx = 0; score = 0;
+      $('done').hidden = true;
+      $('quiz').hidden = false;
+      showQuestion();
+    });
+    // Keys 1-4 or A-D pick an answer
+    document.addEventListener('keydown', e => {
+      if (locked || $('quiz').hidden) return;
+      const k = e.key.toLowerCase();
+      const i = '1234'.indexOf(k) >= 0 ? '1234'.indexOf(k) : 'abcd'.indexOf(k);
+      if (i >= 0 && i < QUESTIONS[idx].o.length && !e.ctrlKey && !e.metaKey && !e.altKey) answer(i);
+    });
+    showQuestion();
+
+    // ---------- Motion: reveal on scroll, progress bar, sticky bar, card tilt ----------
+    (function () {
+      const reveals = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(entries => {
+          entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+        }, { threshold: 0.15 });
+        reveals.forEach(el => io.observe(el));
+      } else {
+        reveals.forEach(el => el.classList.add('in'));
+      }
+
+      const pbar = $('pbar'), bw = $('barwrap');
+      function onScroll() {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        pbar.style.transform = 'scaleX(' + (max > 0 ? window.scrollY / max : 0) + ')';
+        bw.classList.toggle('stuck', window.scrollY > 8);
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      // The sample card leans slightly toward the mouse (mouse only, not on touch screens)
+      const sheet = $('sheet');
+      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+          !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        sheet.addEventListener('pointermove', e => {
+          const r = sheet.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width - 0.5;
+          const y = (e.clientY - r.top) / r.height - 0.5;
+          sheet.style.transform = 'perspective(900px) rotateY(' + (x * 5) + 'deg) rotateX(' + (-y * 5) + 'deg)';
+        });
+        sheet.addEventListener('pointerleave', () => { sheet.style.transform = ''; });
+      }
+    })();
+
+    // ---------- Live numbers from the server ----------
+    function countUp(el, target) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || target < 2) { el.textContent = target; return; }
+      const start = performance.now(), dur = 900;
+      (function step(now) {
+        const t = Math.min((now - start) / dur, 1);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3)));
+        if (t < 1) requestAnimationFrame(step);
+      })(start);
+    }
     fetch('/api/health')
       .then(r => r.json())
-      .then(d => { document.getElementById('health').textContent = JSON.stringify(d, null, 2); })
-      .catch(() => { document.getElementById('health').textContent = 'Could not reach the API.'; });
+      .then(d => {
+        countUp($('sExams'), d.exams);
+        countUp($('sQuestions'), d.questions);
+        countUp($('sUsers'), d.users);
+        $('dot').className = 'dot up';
+        $('status').textContent = 'Server is up';
+        $('statusNote').textContent = 'These numbers come from the live database.';
+      })
+      .catch(() => {
+        $('dot').className = 'dot down';
+        $('status').textContent = 'Server not reachable';
+        $('statusNote').textContent = 'Refresh in a minute. The free host may still be waking up.';
+      });
   </script>
 </body>
 </html>
